@@ -28,16 +28,15 @@ DeprecationVersionInventoryTest >> testOnlyMethodsOfTheRepository [
 ]
 
 { #category : 'tests' }
-DeprecationVersionInventoryTest >> testVersionDevelopedAt [
+DeprecationVersionInventoryTest >> testVersionContaining [
 
-	| inventory |
-	inventory := DeprecationVersionInventory new.
-	inventory releaseDates: {
-		(12 -> (DateAndTime year: 2024 month: 4 day: 29)).
-		(13 -> (DateAndTime year: 2025 month: 5 day: 15)) } asDictionary.
-	self assert: (inventory versionDevelopedAt: (DateAndTime year: 2024 month: 1 day: 1)) equals: 12.
-	self assert: (inventory versionDevelopedAt: (DateAndTime year: 2024 month: 6 day: 1)) equals: 13.
-	self assert: (inventory versionDevelopedAt: (DateAndTime year: 2025 month: 6 day: 1)) equals: SystemVersion current major
+	| inventory releases |
+	inventory := DeprecationVersionInventory repository: (IceRepository registeredRepositoryIncludingPackage: Deprecation package).
+	releases := inventory releaseCommits.
+	self assert: (inventory versionContaining: (releases at: 13)) equals: 13.
+	self assert: (inventory versionContaining: (releases at: 14)) equals: 14.
+	self assert: (inventory versionContaining: (releases at: 12) ancestors first) equals: 12.
+	self assert: (inventory versionContaining: inventory repository headCommit) equals: SystemVersion current major
 ]
 
 { #category : 'tests' }

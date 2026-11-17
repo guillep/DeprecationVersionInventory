@@ -1,7 +1,7 @@
 "
-I find the Pharo version in which each deprecation of the image was introduced, for deprecations that do not state it (PHEP-0004 asks them to).
+I find the Pharo version in which each deprecation of a repository was introduced, for deprecations that do not state it (PHEP-0004 asks them to).
 
-A method in a DeprecatedN package (Deprecated14, Deprecated13-Kernel) was deprecated in Pharo N. Otherwise I look in the git history of the method for the oldest commit sending #deprecated:, and answer the first Pharo version released after that commit, using the release tags (v12.0.0) of the repository.
+A method in a DeprecatedN package (Deprecated14, Deprecated13-Kernel) was deprecated in Pharo N. Otherwise I look in the git history of the method for the oldest commit sending #deprecated:, and answer the first Pharo version whose release tag (v12.0.0) includes that commit, or the version under development when no release does yet.
 
 	(DeprecationVersionInventory repository: (IceRepository registeredRepositoryIncludingPackage: Deprecation package)) entries
 "
@@ -9,8 +9,7 @@ Class {
 	#name : 'DeprecationVersionInventory',
 	#superclass : 'Object',
 	#instVars : [
-		'repository',
-		'releaseDates'
+		'repository'
 	],
 	#category : 'Deprecation-Inventory',
 	#package : 'Deprecation-Inventory'
@@ -23,8 +22,8 @@ DeprecationVersionInventory class >> repository: anIceRepository [
 ]
 
 { #category : 'versions' }
-DeprecationVersionInventory >> deprecationDateOf: aMethod [
-	"The date of the oldest commit sending #deprecated: in aMethod, nil when the method is in no repository or its history has none. The method's own repository is asked: Spec, Microdown or Roassal live in theirs."
+DeprecationVersionInventory >> deprecationCommitOf: aMethod [
+	"The oldest commit sending #deprecated: in aMethod, nil when the method is in no repository or its history has none."
 
 	| methodRepository history firstDeprecated |
 	methodRepository := IceRepository registeredRepositoryIncludingPackage: aMethod package.
@@ -33,7 +32,13 @@ DeprecationVersionInventory >> deprecationDateOf: aMethod [
 	firstDeprecated := history reversed
 		                   detect: [ :each | each definition sourceCode includesSubstring: 'deprecated:' ]
 		                   ifNone: [ ^ nil ].
-	^ firstDeprecated datetime
+	^ firstDeprecated commit
+]
+
+{ #category : 'versions' }
+DeprecationVersionInventory >> deprecationDateOf: aMethod [
+
+	^ (self deprecationCommitOf: aMethod) ifNotNil: [ :commit | commit datetime ]
 ]
 
 { #category : 'inventory' }
@@ -55,9 +60,9 @@ DeprecationVersionInventory >> entryFor: aMethod [
 
 	(self versionFromPackageOf: aMethod) ifNotNil: [ :version |
 		^ DeprecationVersionEntry method: aMethod version: version source: #package ].
-	(self deprecationDateOf: aMethod) ifNotNil: [ :deprecationDate |
-		^ (DeprecationVersionEntry method: aMethod version: (self versionDevelopedAt: deprecationDate) source: #history)
-			  date: deprecationDate;
+	(self deprecationCommitOf: aMethod) ifNotNil: [ :commit |
+		^ (DeprecationVersionEntry method: aMethod version: (self versionContaining: commit) source: #history)
+			  date: commit datetime;
 			  yourself ].
 	^ DeprecationVersionEntry method: aMethod version: nil source: #unknown
 ]
@@ -94,23 +99,21 @@ DeprecationVersionInventory >> methodsWithoutVersion [
 ]
 
 { #category : 'versions' }
-DeprecationVersionInventory >> releaseDates [
-	"Major version -> date of its release tag (v12.0.0)."
+DeprecationVersionInventory >> releaseCommits [
+	"Major version -> commit of its release tag (v12.0.0)."
 
-	^ releaseDates ifNil: [
-		  | matcher |
-		  matcher := '^v(\d+)\.0\.0$' asRegex.
-		  releaseDates := Dictionary new.
-		  repository tags do: [ :each |
-			  (matcher matches: each name) ifTrue: [ releaseDates at: (matcher subexpression: 2) asNumber put: each commit datetime ] ].
-		  releaseDates ]
+	| matcher commits |
+	matcher := '^v(\d+)\.0\.0$' asRegex.
+	commits := Dictionary new.
+	repository tags do: [ :each |
+		(matcher matches: each name) ifTrue: [ commits at: (matcher subexpression: 2) asNumber put: each commit ] ].
+	^ commits
 ]
 
 { #category : 'accessing' }
-DeprecationVersionInventory >> releaseDates: aDictionary [
-	"Major version -> release date, instead of reading them from the repository tags."
+DeprecationVersionInventory >> repository [
 
-	releaseDates := aDictionary
+	^ repository
 ]
 
 { #category : 'initialization' }
@@ -133,20 +136,21 @@ DeprecationVersionInventory >> statesVersion: aSendNode [
 ]
 
 { #category : 'versions' }
-DeprecationVersionInventory >> versionDevelopedAt: aDateAndTime [
-	"The first major version released after aDateAndTime, or the current one when none was."
+DeprecationVersionInventory >> versionContaining: aCommit [
+	"The first major version whose release tag includes aCommit, or the version under development when no release does yet. A commit is included in a release when it is its own merge base with the release commit: this follows branches and backports, unlike dates."
 
 	| released |
-	released := self releaseDates associations select: [ :each | each value > aDateAndTime ].
+	released := self releaseCommits associations select: [ :each |
+		            (aCommit commonAncestorWithCommit: each value) ifNil: [ false ] ifNotNil: [ :base | base id = aCommit id ] ].
 	released ifEmpty: [ ^ SystemVersion current major ].
 	^ (released detectMin: [ :each | each key ]) key
 ]
 
 { #category : 'versions' }
 DeprecationVersionInventory >> versionFromHistoryOf: aMethod [
-	"The Pharo version under development when aMethod was deprecated, nil when its history does not say."
+	"The first Pharo version released with the commit that deprecated aMethod, nil when its history does not say."
 
-	^ (self deprecationDateOf: aMethod) ifNotNil: [ :deprecationDate | self versionDevelopedAt: deprecationDate ]
+	^ (self deprecationCommitOf: aMethod) ifNotNil: [ :commit | self versionContaining: commit ]
 ]
 
 { #category : 'versions' }

@@ -28,10 +28,10 @@ self deprecated: 'Use #newMessage instead'
 For every method that sends a deprecation message to `self` without a readable `in:` version:
 
 1. **Package.** A method in a `DeprecatedN` package (`Deprecated14`, `Deprecated13-Kernel`) was deprecated in Pharo N.
-2. **History.** Otherwise, the git history of the method (through Iceberg, in the method's own repository) gives the oldest commit sending `deprecated:`. The version is the first Pharo release after that commit, read from the `vN.0.0` tags of the Pharo repository. A commit newer than every release maps to the version under development.
+2. **History.** Otherwise, the git history of the method (through Iceberg, in the method's own repository) gives the oldest commit sending `deprecated:`. The version is the first Pharo release whose `vN.0.0` tag includes that commit (the commit is its own merge base with the tag). A commit that no release includes yet belongs to the version under development. Unlike commit dates, this follows long-lived branches: a commit written before a release but merged after it belongs to the next version.
 3. **Unknown.** Methods with no repository or no such commit are reported apart, for a human to decide.
 
-Backports are ignored: a deprecation is attributed to the version under development when it was committed.
+Only the packages of the inventoried repository are listed: PHEP-0004 governs the Pharo repository, not the projects loaded beside it (Spec, Roassal, Microdown...).
 
 ## Usage
 
