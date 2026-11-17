@@ -18,7 +18,8 @@ DeprecationVersionTransformationTest >> testAddsCommitDate [
 	entry := self entryFor: ExampleForDeprecationTest >> #deprecatedMessageWithTransformAndNoVersion version: 13.
 	entry date: (DateAndTime year: 2025 month: 3 day: 7).
 	source := DeprecationVersionTransformation new sourceWithVersionFor: entry.
-	self assert: (source includesSubstring: 'on: ''2025-03-07'' in: #Pharo13 transformWith:')
+	self assert: (source includesSubstring: 'on: ''2025-03-07''').
+	self assert: (source includesSubstring: 'in: #Pharo13')
 ]
 
 { #category : 'tests' }
@@ -29,7 +30,11 @@ DeprecationVersionTransformationTest >> testAddsVersionAndUnknownDate [
 		          (self entryFor: ExampleForDeprecationTest >> #deprecatedMessageWithTransformAndNoVersion version: 14).
 	self assert: source equals: 'deprecatedMessageWithTransformAndNoVersion
 
-	self deprecated: ''This method is part of the DeprecationTest.'' on: ''unknown'' in: #Pharo14 transformWith: ''`@receiver deprecatedMessageWithTransformAndNoVersion'' -> ''`@receiver newMessage'''
+	self
+		deprecated: ''This method is part of the DeprecationTest.''
+		on: ''unknown''
+		in: #Pharo14
+		transformWith: ''`@receiver deprecatedMessageWithTransformAndNoVersion'' -> ''`@receiver newMessage'''
 ]
 
 { #category : 'tests' }
@@ -44,12 +49,24 @@ DeprecationVersionTransformationTest >> testGeneratesChangesWithoutApplyingThem 
 ]
 
 { #category : 'tests' }
+DeprecationVersionTransformationTest >> testRemovesVersionWrittenInTheExplanation [
+
+	| explanation |
+	explanation := DeprecationVersionTransformation new explanationSourceOf:
+		               (RBParser parseExpression: '''Use #parentName: instead. #Pharo14''').
+	self assert: explanation equals: '''Use #parentName: instead.'''.
+	explanation := DeprecationVersionTransformation new explanationSourceOf: (RBParser parseExpression: '''Use #foo instead''').
+	self assert: explanation equals: '''Use #foo instead'''
+]
+
+{ #category : 'tests' }
 DeprecationVersionTransformationTest >> testReplacesUnreadableVersionAndKeepsDate [
 
 	| source |
 	source := DeprecationVersionTransformation new sourceWithVersionFor:
 		          (self entryFor: SomeClassForCompiledMethodTests >> #deprecatedMethod2 version: 12).
-	self assert: (source includesSubstring: 'on: ''date'' in: #Pharo12').
+	self assert: (source includesSubstring: 'on: ''date''').
+	self assert: (source includesSubstring: 'in: #Pharo12').
 	self deny: (source includesSubstring: 'someversion')
 ]
 
