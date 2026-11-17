@@ -1,5 +1,5 @@
 "
-I am a deprecated method without a stated Pharo version, with the version found for it (nil when none was found) and where it came from: #package, #history or #unknown.
+I am a deprecated method without a stated Pharo version, with the version found for it (nil when none was found), where it came from (#package, #history or #unknown), and the date of the commit that deprecated it when the history gave it.
 "
 Class {
 	#name : 'DeprecationVersionEntry',
@@ -7,7 +7,8 @@ Class {
 	#instVars : [
 		'method',
 		'version',
-		'source'
+		'source',
+		'date'
 	],
 	#category : 'Deprecation-Inventory',
 	#package : 'Deprecation-Inventory'
@@ -17,6 +18,19 @@ Class {
 DeprecationVersionEntry class >> method: aMethod version: aNumber source: aSymbol [
 
 	^ self new setMethod: aMethod version: aNumber source: aSymbol
+]
+
+{ #category : 'accessing' }
+DeprecationVersionEntry >> date [
+	"The date of the commit that deprecated the method, or nil when the version came from its package."
+
+	^ date
+]
+
+{ #category : 'accessing' }
+DeprecationVersionEntry >> date: aDateAndTime [
+
+	date := aDateAndTime
 ]
 
 { #category : 'accessing' }

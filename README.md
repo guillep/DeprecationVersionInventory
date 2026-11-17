@@ -48,6 +48,30 @@ inventory entries.
 
 Each `DeprecationVersionEntry` answers its `method`, its `version` (a major version number, or `nil`) and its `source`.
 
+## Adding the versions in bulk
+
+`DeprecationVersionTransformation` is a refactoring that adds the version found to every deprecation of the inventory, in one go:
+
+```smalltalk
+transformation := DeprecationVersionTransformation entries: inventory entries.
+
+transformation generateChanges.   "preview, without touching the code"
+transformation execute.           "apply every change"
+```
+
+Each deprecation send becomes a `deprecated:on:in:` send, keeping its explanation and its `transformWith:` and `when:` arguments:
+
+```smalltalk
+"before"
+self deprecated: 'Use #newMessage instead' transformWith: rule.
+"after"
+self deprecated: 'Use #newMessage instead' on: '2025-03-07' in: #Pharo14 transformWith: rule.
+```
+
+The `on:` date is the date of the commit that deprecated the method when the history gave it, and `'unknown'` otherwise. An existing `on:` date is kept, and an unreadable `in:` version (`'someversion'`, `''`) is replaced. Entries whose version is unknown are left untouched.
+
+## Performance
+
 Reading the history walks the whole git log once per method, which takes several seconds each on the Pharo repository. Run large inventories in a background process.
 
 ## Installation

@@ -22,6 +22,20 @@ DeprecationVersionInventory class >> repository: anIceRepository [
 	^ self new setRepository: anIceRepository
 ]
 
+{ #category : 'versions' }
+DeprecationVersionInventory >> deprecationDateOf: aMethod [
+	"The date of the oldest commit sending #deprecated: in aMethod, nil when the method is in no repository or its history has none. The method's own repository is asked: Spec, Microdown or Roassal live in theirs."
+
+	| methodRepository history firstDeprecated |
+	methodRepository := IceRepository registeredRepositoryIncludingPackage: aMethod package.
+	methodRepository ifNil: [ ^ nil ].
+	history := (methodRepository logClass for: methodRepository) historyOfMethod: aMethod.
+	firstDeprecated := history reversed
+		                   detect: [ :each | each definition sourceCode includesSubstring: 'deprecated:' ]
+		                   ifNone: [ ^ nil ].
+	^ firstDeprecated datetime
+]
+
 { #category : 'inventory' }
 DeprecationVersionInventory >> deprecationSelectors [
 
@@ -36,13 +50,15 @@ DeprecationVersionInventory >> entries [
 	^ self methodsWithoutVersion collect: [ :each | self entryFor: each ]
 ]
 
-{ #category : 'inventory' }
+{ #category : 'versions' }
 DeprecationVersionInventory >> entryFor: aMethod [
 
 	(self versionFromPackageOf: aMethod) ifNotNil: [ :version |
 		^ DeprecationVersionEntry method: aMethod version: version source: #package ].
-	(self versionFromHistoryOf: aMethod) ifNotNil: [ :version |
-		^ DeprecationVersionEntry method: aMethod version: version source: #history ].
+	(self deprecationDateOf: aMethod) ifNotNil: [ :deprecationDate |
+		^ (DeprecationVersionEntry method: aMethod version: (self versionDevelopedAt: deprecationDate) source: #history)
+			  date: deprecationDate;
+			  yourself ].
 	^ DeprecationVersionEntry method: aMethod version: nil source: #unknown
 ]
 
@@ -118,16 +134,9 @@ DeprecationVersionInventory >> versionDevelopedAt: aDateAndTime [
 
 { #category : 'versions' }
 DeprecationVersionInventory >> versionFromHistoryOf: aMethod [
-	"The Pharo version under development when the oldest commit sending #deprecated: in aMethod was made, nil when the method is in no repository or its history has none. The method's own repository is asked: Spec, Microdown or Roassal live in theirs, while release dates come from the Pharo repository."
+	"The Pharo version under development when aMethod was deprecated, nil when its history does not say."
 
-	| methodRepository history firstDeprecated |
-	methodRepository := IceRepository registeredRepositoryIncludingPackage: aMethod package.
-	methodRepository ifNil: [ ^ nil ].
-	history := (methodRepository logClass for: methodRepository) historyOfMethod: aMethod.
-	firstDeprecated := history reversed
-		                   detect: [ :each | each definition sourceCode includesSubstring: 'deprecated:' ]
-		                   ifNone: [ ^ nil ].
-	^ self versionDevelopedAt: firstDeprecated datetime
+	^ (self deprecationDateOf: aMethod) ifNotNil: [ :deprecationDate | self versionDevelopedAt: deprecationDate ]
 ]
 
 { #category : 'versions' }
