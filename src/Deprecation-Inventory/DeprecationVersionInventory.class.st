@@ -72,15 +72,25 @@ DeprecationVersionInventory >> isDeprecatedWithoutVersion: aMethod [
 	^ sends notEmpty and: [ sends anySatisfy: [ :each | (self statesVersion: each) not ] ]
 ]
 
+{ #category : 'testing' }
+DeprecationVersionInventory >> isInRepository: aMethod [
+	"Without a repository, every method of the image is inventoried."
+
+	repository ifNil: [ ^ true ].
+	^ repository includesPackageNamed: aMethod package name
+]
+
 { #category : 'inventory' }
 DeprecationVersionInventory >> methodsWithoutVersion [
+	"The deprecated methods without a stated version that belong to the inventoried repository: PHEP-0004 applies to the code of that repository only, not to the projects loaded beside it."
 
-	| selectors methods |
-	selectors := self deprecationSelectors.
+	| methods |
 	methods := Set new.
-	selectors do: [ :each | methods addAll: (SystemNavigation default allReferencesTo: each) ].
-	^ (methods select: [ :each | self isDeprecatedWithoutVersion: each compiledMethod ] thenCollect: [ :each | each compiledMethod ])
-		  asArray sort: [ :a :b | a name <= b name ]
+	self deprecationSelectors do: [ :each | methods addAll: (SystemNavigation default allReferencesTo: each) ].
+	^ (methods
+		   collect: [ :each | each compiledMethod ]
+		   thenSelect: [ :each | (self isInRepository: each) and: [ self isDeprecatedWithoutVersion: each ] ]) asArray sort: [ :a :b |
+		  a name <= b name ]
 ]
 
 { #category : 'versions' }

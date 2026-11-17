@@ -18,6 +18,16 @@ DeprecationVersionInventoryTest >> testDeprecationsWithoutVersion [
 ]
 
 { #category : 'tests' }
+DeprecationVersionInventoryTest >> testOnlyMethodsOfTheRepository [
+
+	| inventory |
+	inventory := DeprecationVersionInventory repository: (IceRepository registeredRepositoryIncludingPackage: Deprecation package).
+	self assert: (inventory isInRepository: Object >> #haltOnRead).
+	self deny: (inventory isInRepository: DeprecationVersionInventory >> #entries).
+	self assert: (DeprecationVersionInventory new isInRepository: DeprecationVersionInventory >> #entries)
+]
+
+{ #category : 'tests' }
 DeprecationVersionInventoryTest >> testVersionDevelopedAt [
 
 	| inventory |
