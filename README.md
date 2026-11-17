@@ -55,7 +55,7 @@ Reading the history walks the whole git log once per method, which takes several
 ```smalltalk
 Metacello new
 	baseline: 'DeprecationVersionInventory';
-	repository: 'github://guillep/DeprecationVersionInventory:main/src';
+	repository: 'github://guillep/DeprecationVersionInventory:master/src';
 	load.
 ```
 
