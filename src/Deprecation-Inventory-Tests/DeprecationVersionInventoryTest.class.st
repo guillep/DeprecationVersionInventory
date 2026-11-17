@@ -12,6 +12,7 @@ DeprecationVersionInventoryTest >> testDeprecationsWithoutVersion [
 	inventory := DeprecationVersionInventory new.
 	self assert: (inventory isDeprecatedWithoutVersion: ExampleForDeprecationTest >> #deprecatedMessageWithTransformAndNoVersion).
 	self deny: (inventory isDeprecatedWithoutVersion: ExampleForDeprecationTest >> #deprecatedMessageWithTransform).
+	self deny: (inventory isDeprecatedWithoutVersion: ExampleForDeprecationTest >> #deprecatedMessageWithTransformAndNoDate).
 	self deny: (inventory isDeprecatedWithoutVersion: Object >> #haltOnRead).
 	self assert: (inventory isDeprecatedWithoutVersion: SomeClassForCompiledMethodTests >> #deprecatedMethod2).
 	self deny: (inventory isDeprecatedWithoutVersion: CompiledMethod >> #isDeprecated)

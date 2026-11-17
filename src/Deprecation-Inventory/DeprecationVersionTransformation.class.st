@@ -38,12 +38,6 @@ DeprecationVersionTransformation >> buildTransformations [
 ]
 
 { #category : 'rewriting' }
-DeprecationVersionTransformation >> dateStringOf: anEntry [
-
-	^ anEntry date ifNil: [ 'unknown' ] ifNotNil: [ :date | date asDate yyyymmdd ]
-]
-
-{ #category : 'rewriting' }
 DeprecationVersionTransformation >> explanationSourceOf: anArgumentNode [
 	"The explanation without the Pharo version some authors wrote in it ('Use #foo instead. #Pharo14'): the version now goes in in:, and a copy in the text could contradict it."
 
@@ -68,18 +62,17 @@ DeprecationVersionTransformation >> indentationOf: aString at: anIndex [
 
 { #category : 'rewriting' }
 DeprecationVersionTransformation >> send: aSendNode withVersionOf: anEntry indentation: aString [
-	"Rewrite a deprecation send as deprecated:on:in:, one keyword per line, keeping its explanation, its on: date when it had one, and its transformWith: and when: arguments."
+	"Rewrite a deprecation send as deprecated:in:, one keyword per line, keeping its explanation and its transformWith: and when: arguments. It keeps its on: date when it had one, and gets the date of the commit that deprecated it when the history gave it: the date is informative, the version is what PHEP-0004 needs."
 
 	| arguments keywords |
 	arguments := Dictionary new.
 	aSendNode keywords with: aSendNode arguments do: [ :keyword :argument | arguments at: keyword put: argument ].
 	keywords := OrderedCollection new.
-	keywords
-		add: #deprecated: -> (self explanationSourceOf: (arguments at: #deprecated:));
-		add: #on: -> ((arguments at: #on: ifAbsent: [ nil ])
-			 ifNil: [ (self dateStringOf: anEntry) printString ]
-			 ifNotNil: [ :argument | argument sourceCode ]);
-		add: #in: -> ('#Pharo' , anEntry version printString).
+	keywords add: #deprecated: -> (self explanationSourceOf: (arguments at: #deprecated:)).
+	(arguments at: #on: ifAbsent: [ nil ])
+		ifNil: [ anEntry date ifNotNil: [ :date | keywords add: #on: -> date asDate yyyymmdd printString ] ]
+		ifNotNil: [ :argument | keywords add: #on: -> argument sourceCode ].
+	keywords add: #in: -> ('#Pharo' , anEntry version printString).
 	#( #transformWith: #when: ) do: [ :keyword |
 		arguments at: keyword ifPresent: [ :argument | keywords add: keyword -> argument sourceCode ] ].
 	^ String streamContents: [ :stream |

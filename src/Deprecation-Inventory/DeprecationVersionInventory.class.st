@@ -44,8 +44,8 @@ DeprecationVersionInventory >> deprecationDateOf: aMethod [
 { #category : 'inventory' }
 DeprecationVersionInventory >> deprecationSelectors [
 
-	^ #( #deprecated: #deprecated:transformWith: #deprecated:transformWith:when: #deprecated:on:in: #deprecated:on:in:transformWith:
-	     #deprecated:on:in:transformWith:when: )
+	^ #( #deprecated: #deprecated:transformWith: #deprecated:transformWith:when: #deprecated:in: #deprecated:in:transformWith:
+	     #deprecated:in:transformWith:when: #deprecated:on:in: #deprecated:on:in:transformWith: #deprecated:on:in:transformWith:when: )
 ]
 
 { #category : 'inventory' }

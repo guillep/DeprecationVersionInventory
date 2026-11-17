@@ -23,7 +23,7 @@ DeprecationVersionTransformationTest >> testAddsCommitDate [
 ]
 
 { #category : 'tests' }
-DeprecationVersionTransformationTest >> testAddsVersionAndUnknownDate [
+DeprecationVersionTransformationTest >> testAddsVersionWithoutDate [
 
 	| source |
 	source := DeprecationVersionTransformation new sourceWithVersionFor:
@@ -32,7 +32,6 @@ DeprecationVersionTransformationTest >> testAddsVersionAndUnknownDate [
 
 	self
 		deprecated: ''This method is part of the DeprecationTest.''
-		on: ''unknown''
 		in: #Pharo14
 		transformWith: ''`@receiver deprecatedMessageWithTransformAndNoVersion'' -> ''`@receiver newMessage'''
 ]
